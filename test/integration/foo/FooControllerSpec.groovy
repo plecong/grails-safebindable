@@ -32,4 +32,13 @@ class FooControllerSpec extends ControllerSpec {
 			model.safeFoo != null
 			model.safeFoo.admin == false
 	}
+
+	def 'unsafe params are bound using regular map'() {
+		when:
+			def model = controller.manual()
+
+		then:
+			model.safeFoo != null
+			model.safeFoo.admin == true
+	}
 }

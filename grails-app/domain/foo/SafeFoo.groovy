@@ -7,6 +7,6 @@ class SafeFoo {
 	def grailsApplication
 
 	String name
-	boolean admin
+	boolean admin = false
 
 }
