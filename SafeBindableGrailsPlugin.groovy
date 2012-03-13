@@ -1,4 +1,5 @@
-import grails.plugins.bindable.DynamicDomainMethodUtils
+import org.codehaus.groovy.grails.web.servlet.mvc.GrailsParameterMap
+import org.codehaus.groovy.grails.web.binding.DataBindingUtils
 
 class SafeBindableGrailsPlugin {
     // the plugin version
@@ -9,7 +10,9 @@ class SafeBindableGrailsPlugin {
     def dependsOn = [domainClass: "1.0 > *"]
     // resources that are excluded from plugin packaging
     def pluginExcludes = [
-            "grails-app/views/error.gsp"
+            "grails-app/views/error.gsp",
+            "grails-app/domain/foo",
+            "grails-app/controllers/foo",
     ]
 
     // TODO Fill in these fields
@@ -29,29 +32,31 @@ See http://blog.adamcreeger.com/2012/03/grails-rails-github-and-mass-assignment.
     def doWithApplicationContext = { applicationContext -> }
 
     def doWithDynamicMethods = { ctx ->
-        application.domainClasses.each { dc ->
-            MetaClass metaClass = dc.metaClass
-            def bindableParams = dc.getStaticPropertyValue('dataBindable', List)
-
-            if (bindableParams != null) {
-                metaClass.constructor = { Map map ->
-                    def instance = metaClass.invokeConstructor()
-                    def included = (map instanceof GrailsParameterMap) ? bindableParams : null
-                    DataBindingUtils.bindObjectToDomainInstance(dc, instance, map, included, Collections.EMPTY_LIST, null)
-                    DataBindingUtils.assignBidirectionalAssociations(instance, map, dc)
-                    return instance
-                }
-                metaClass.setProperties = { Object o ->
-                    def included = (o instanceof GrailsParameterMap) ? bindableParams : null
-                    DataBindingUtils.bindObjectToDomainInstance(dc, instance, o, included, Collections.EMPTY_LIST, null)
-                }
-            }
-        }
+        application.domainClasses.each { dc -> updateDomainClass(dc) }
     }
 
     def onChange = { event ->
     }
 
     def onConfigChange = { event ->
+    }
+
+    private void updateDomainClass(def dc) {
+        MetaClass metaClass = dc.metaClass
+        def bindableParams = dc.getStaticPropertyValue('dataBindable', List)
+
+        if (bindableParams != null) {
+            metaClass.constructor = { Map map ->
+                def instance = metaClass.invokeConstructor()
+                def included = (map instanceof GrailsParameterMap) ? bindableParams : null
+                DataBindingUtils.bindObjectToDomainInstance(dc, instance, map, included, Collections.EMPTY_LIST, null)
+                DataBindingUtils.assignBidirectionalAssociations(instance, map, dc)
+                return instance
+            }
+            metaClass.setProperties = { Object o ->
+                def included = (o instanceof GrailsParameterMap) ? bindableParams : null
+                DataBindingUtils.bindObjectToDomainInstance(dc, instance, o, included, Collections.EMPTY_LIST, null)
+            }
+        }
     }
 }
